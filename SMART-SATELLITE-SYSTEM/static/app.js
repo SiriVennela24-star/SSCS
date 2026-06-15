@@ -493,7 +493,7 @@ function updateDashboard(state) {
 // --- THREE JS INITIALIZATION ---
 function initThreeJS() {
     console.log("initThreeJS: Starting...");
-    ws = new WebSocket("https://sscs-bh9j.onrender.com");
+    ws = new WebSocket("wss://sscs-bh9j.onrender.com/ws");
     const canvas = document.getElementById('canvas3d');
     console.log("initThreeJS: Canvas element:", canvas);
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
