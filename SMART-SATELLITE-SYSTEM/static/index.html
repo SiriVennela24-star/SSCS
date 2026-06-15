@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Fidelity Smart Satellite Simulator</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Third-party CDNs for Physics and Live Charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <canvas id="canvas3d"></canvas>
+    <div id="ui-container">
+        <header>
+            <h1>SMART SATELLITE SIMULATOR</h1>
+            <div class="status">SYSTEM: <span id="status-indicator">INITIALIZING...</span></div>
+        </header>
+
+        <div class="panels">
+            <div class="left-column">
+                <div class="panel" style="flex: 1; overflow-y: auto;">
+                    <h2>Environment Control</h2>
+                
+                <div class="control-group">
+                    <label>Active Satellite Profile</label>
+                    <select id="satellite-profile" style="width: 100%; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--glass-border); color: #fff; padding: 10px; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 1.05rem; outline: none; cursor: pointer; margin-top: 5px;">
+                        <option value="noaa" data-freq="137.5" data-name="NOAA Weather Satellite">NOAA Weather Satellite — VHF Band (137.5 MHz)</option>
+                        <option value="gps" data-freq="1575.42" data-name="GPS Navigation Satellite">GPS Navigation Satellite — L-Band (1575.42 MHz)</option>
+                        <option value="starlink" data-freq="12000.0" data-name="Starlink Broadband Node" selected>Starlink Broadband Node — Ku-Band (12000.0 MHz)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Atmospheric Noise Level <span class="value-display" id="noise-val">10%</span></label>
+                    <input type="range" id="noise-slider" min="0" max="0.8" step="0.05" value="0.1">
+                </div>
+
+                <div class="control-group">
+                    <label>Simulation Speed <span class="value-display" id="time-val">1.0x</span></label>
+                    <input type="range" id="time-slider" min="0.1" max="5.0" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <div class="toggle">
+                        <label>AI Anomaly Detection</label>
+                        <label class="switch">
+                            <input type="checkbox" id="ai-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="toggle">
+                        <label>Quantum Cryptography</label>
+                        <label class="switch">
+                            <input type="checkbox" id="quantum-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Quantum Precision (Shots)</label>
+                    <input type="number" id="quantum-shots" min="128" max="4096" step="128" value="1024" style="width: 100%; background: rgba(0,0,0,0.6); border: 1px solid var(--glass-border); color: #fff; padding: 8px 12px; border-radius: 8px; font-family: 'Orbitron', monospace; font-size: 1rem; outline: none; margin-top: 5px;">
+                </div>
+                
+                <div class="control-group">
+                    <div class="toggle" style="border-color: rgba(255, 0, 60, 0.35);">
+                        <label class="jamming-toggle-label">Active RF Jamming</label>
+                        <label class="switch">
+                            <input type="checkbox" id="jamming-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="toggle" style="border-color: rgba(204, 0, 255, 0.35);">
+                        <label class="eavesdropping-toggle-label">Eavesdropping (Eve)</label>
+                        <label class="switch">
+                            <input type="checkbox" id="eavesdropping-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="signalUploader" class="file-upload-label">
+                        <svg style="width:16px; height:16px; margin-right:8px; vertical-align:middle; display:inline-block;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        UPLOAD LIVE SIGNAL FILE
+                    </label>
+                    <input type="file" id="signalUploader" accept=".csv,.json" style="display: none;">
+                    <div id="uploadStatus" class="status-glow"></div>
+                </div>
+
+                <div class="system-info">
+                    <h3>Encryption Protocol</h3>
+                    <p id="enc-status">Standard AES-256</p>
+                </div>
+            </div>
+            
+            <div class="panel" style="width: 100%; padding: 15px; height: fit-content; pointer-events: auto; margin-top: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">
+                    <h3 style="font-family:'Orbitron', sans-serif; font-size:1rem; color:#aaa; margin:0;">JARVIS AI LOG</h3>
+                    <button id="view-history-btn" style="background: rgba(0, 243, 255, 0.15); border: 1px solid var(--neon-blue); color: var(--neon-blue); font-family: 'Rajdhani', sans-serif; font-weight: bold; font-size: 0.85rem; padding: 2px 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s;">VIEW DB HISTORY</button>
+                </div>
+                <div id="jarvis-log" class="log-box box" style="background: rgba(0,25,40,0.6); max-height: 120px; overflow-y: auto;">
+                    AWAITING SYSTEM INITIALIZATION...
+                </div>
+            </div>
+        </div>
+
+            <div class="panel" style="max-height: 85vh; overflow-y: auto;">
+                <h2>Telemetry & Metrics</h2>
+                
+                <div class="metric">
+                    <span>RF Frequency (MHz)</span>
+                    <p style="color:#bbb; font-size:0.95rem;">Carrier: <strong style="color:#fff;" id="carrier-freq">12000.00</strong> MHz</p>
+                    <p style="color:#bbb; font-size:0.95rem;">Uplink: <strong style="color:#fff;" id="uplink-freq">13800.00</strong> MHz</p>
+                    <p style="color:#bbb; font-size:0.95rem;">Downlink: <strong style="color:#fff;" id="downlink-freq">11400.00</strong> MHz</p>
+                </div>
+
+                <div class="metric">
+                    <span>RF Signal Waveform (Oscilloscope)</span>
+                    <canvas id="waveform-canvas" width="300" height="80" style="background: rgba(0,0,0,0.7); border: 1px solid var(--glass-border); border-radius: 8px; width: 100%; height: 80px; box-shadow: inset 0 0 25px rgba(0, 243, 255, 0.15);"></canvas>
+                </div>
+
+                <div class="metric">
+                    <span>Chart A: SNR (dB) & Packet Loss (%)</span>
+                    <div style="position: relative; height: 130px; width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px;">
+                        <canvas id="chart-snr-loss"></canvas>
+                    </div>
+                </div>
+                
+                <div class="metric">
+                    <span>Chart B: Data Throughput (Uplink/Downlink)</span>
+                    <div style="position: relative; height: 130px; width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 8px; padding: 5px;">
+                        <canvas id="chart-throughput"></canvas>
+                    </div>
+                </div>
+
+                <div class="metric">
+                    <span>AI Threat Analysis</span>
+                    <div id="ai-alerts-box" class="box clear">NO ANOMALIES DETECTED. SYSTEM STABLE.</div>
+                </div>
+                
+                <div class="metric">
+                    <span>Active Quantum Key (BB84)</span>
+                    <div id="qk-box" class="box qk-idle">SYSTEM DEACTIVATED. AWAITING ACTIVATION.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="/static/app.js?v=2"></script>
+</body>
+</html>
